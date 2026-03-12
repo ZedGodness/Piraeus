@@ -1,0 +1,13 @@
+1. Инсталираме VS Code
+2. Инсталираме Node.JS махнете отметката за инсталиране на  Chocolatey
+3. Стартираме VS Code, и изпълняваме следния ред от код в Терминала (PowerShell)
+ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+4. Създаваме директория и я отваряме в терминала. Изпълняваме следната команда:
+npm create vite@latest
+От менюто избираме framework React -> Variant: JavaScript+React Compiler
+ Install with npm and start now?
+│  Yes
+5. Изпълняваме командата
+npm install --legacy-peer-deps
+6. Стартираме сървъра
+npm run dev
