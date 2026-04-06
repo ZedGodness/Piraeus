@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 12, 2026 at 10:27 AM
+-- Generation Time: Apr 06, 2026 at 03:26 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -36,6 +36,14 @@ CREATE TABLE `accounts` (
   `currency` enum('EUR','USD') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `accounts`
+--
+
+INSERT INTO `accounts` (`IBAN`, `owner`, `type`, `balance`, `payment_limit`, `currency`) VALUES
+('PRB001', '1234567891', 'разплащателна', 460.00, 1000.00, 'EUR'),
+('PRB002', '9910121414', 'разплащателна', 200.00, 1000.00, 'EUR');
+
 -- --------------------------------------------------------
 
 --
@@ -51,6 +59,14 @@ CREATE TABLE `payments` (
   `dateTime` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `payments`
+--
+
+INSERT INTO `payments` (`IBAN_sender`, `IBAN_receiver`, `amount`, `currency`, `reason`, `dateTime`) VALUES
+('PRB001', 'PRB002', 100.00, 'EUR', 'Превод на 100 евро.', '2026-04-02 11:46:44'),
+('PRB002', 'PRB001', 50.00, 'EUR', 'Превод на 50 евро.', '2026-04-02 11:48:12');
+
 -- --------------------------------------------------------
 
 --
@@ -65,6 +81,14 @@ CREATE TABLE `users` (
   `phoneNumber` varchar(10) NOT NULL,
   `address` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`EGN`, `firstName`, `lastName`, `email`, `phoneNumber`, `address`) VALUES
+('1234567891', 'Иван', 'Иванов', 'ivan.ivanov91@gmail.com', '0891234567', 'гр. Русе, ул. \"Пирин\" 6'),
+('9910121414', 'Кирил', 'Венелинов', 'kiril.venelinov99@gmail.com', '0889765432', 'гр. Свищов, ул. \"Цар Освободител\" 27');
 
 --
 -- Indexes for dumped tables
