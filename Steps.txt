@@ -1,0 +1,350 @@
+Ще ти отговоря реалистично — това задание не е трудно като логика, но е средно сложно като интеграция, защото имаш 3 отделни API-та + комуникация между тях.
+
+⏱️ Колко време ще отнеме?
+
+Ако вече имате:
+
+база данни ✔️
+базови познания по Express ✔️
+
+👉 реалистично време:
+
+👤 За 1 човек:
+Минимум: 1–2 дни (ако всичко върви гладко)
+Нормално: 3–5 дни (с дебъгване и тестове)
+👥 За екип (2–3 души):
+1–3 дни спокойно
+🧠 Как да го реализирате (стъпка по стъпка)
+
+Ще го разбия така, че да го направиш без да се губиш.
+
+🔹 1. GET /bankAPI/transactions/<search>
+
+Това почти вече си го започнал 👇
+
+Какво трябва да прави:
+търси по:
+дата
+IBAN
+връща списък от транзакции
+Пример с Express:
+app.get('/bankAPI/transactions/:search', (req, res) => {
+  const search = req.params.search;
+  const iban = req.query.iban;
+
+  const query = `
+    SELECT * FROM transactions 
+    WHERE dateTime LIKE ? 
+    AND (IBAN_sender = ? OR IBAN_receiver = ?)
+  `;
+
+  connection.query(query, [`%${search}%`, iban, iban], (err, results) => {
+    if (err) {
+      return res.status(600).json({ error: 'DB error' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Няма транзакции' });
+    }
+
+    res.json(results);
+  });
+});
+🔹 2. POST /bankAPI/transactions/
+
+Това е най-важната част (междубанков превод)
+
+Какво се случва:
+🪜 Стъпки:
+Проверяваш:
+има ли IBAN_sender
+има ли баланс
+лимит
+Взимаш кода на банката:
+const bankCode = IBAN_receiver.substring(0, 3);
+Викаш банковия регистър:
+GET /bankRegister/bank/<IBAN_receiver>
+Получаваш API адрес
+Правиш заявка към другата банка (axios/fetch)
+Ако успех:
+записваш транзакцията
+намаляваш баланса
+Пример (опростен):
+import axios from 'axios';
+
+app.post('/bankAPI/transactions', async (req, res) => {
+  const { IBAN_sender, IBAN_receiver, amount, currency, reason } = req.body;
+
+  try {
+    // 1. Проверка на баланс
+    const [account] = await getAccount(IBAN_sender);
+
+    if (!account) {
+      return res.status(605).json({ msg: 'Невалиден IBAN' });
+    }
+
+    if (account.balance < amount) {
+      return res.status(601).json({ msg: 'Недостатъчна наличност' });
+    }
+
+    // 2. Вземане на банката
+    const bankCode = IBAN_receiver.substring(0, 3);
+
+    const registryRes = await axios.get(
+      `http://localhost:4000/bankRegister/bank/${IBAN_receiver}`
+    );
+
+    const bankApi = registryRes.data.bank_api;
+
+    // 3. Заявка към другата банка
+    const response = await axios.post(bankApi, {
+      IBAN_sender,
+      IBAN_receiver,
+      amount,
+      currency,
+      reason,
+    });
+
+    if (response.data.status_code !== 200) {
+      return res.status(650).json(response.data);
+    }
+
+    // 4. Запис в DB
+    await saveTransaction(...);
+
+    // 5. Update balance
+    await updateBalance(...);
+
+    res.json({ msg: 'Успешен превод' });
+
+  } catch (err) {
+    return res.status(602).json({ msg: 'Registry error' });
+  }
+});
+🔹 3. Банков регистър (bankRegister API)
+
+Това е най-лесната част.
+
+Какво прави:
+приема IBAN
+връща коя е банката
+Пример:
+app.get('/bankRegister/bank/:iban', (req, res) => {
+  const iban = req.params.iban;
+  const code = iban.substring(0, 3);
+
+  const query = 'SELECT * FROM banks WHERE code = ?';
+
+  connection.query(query, [code], (err, result) => {
+    if (err) {
+      return res.status(702).json({ msg: 'DB error' });
+    }
+
+    if (result.length === 0) {
+      return res.status(701).json({ msg: 'Unknown bank' });
+    }
+
+    res.json(result[0]);
+  });
+});
+⚠️ Най-честите проблеми
+
+Ще ви спестя часове дебъгване:
+
+❌ 1. CORS
+
+👉 ако банките са на различни портове
+✔️ сложи:
+
+import cors from 'cors';
+app.use(cors());
+❌ 2. async/await + MySQL
+
+👉 използвайте promise версия или wrapper
+
+❌ 3. Липса на error handling
+
+👉 винаги връщайте статус кодове (601, 701 и т.н.)
+
+❌ 4. Тестване
+
+👉 ползвайте:
+
+Postman
+Thunder Client (VS Code)
+🧩 Как да го разделите (ако сте екип)
+👤 Човек 1:
+GET transactions
+DB логика
+👤 Човек 2:
+POST transaction (core logic)
+👤 Човек 3:
+Bank register API
+🟢 Финално заключение
+
+👉 Това е перфектно типично REST microservices упражнение
+👉 Най-трудното не е кодът, а:
+
+комуникацията между услугите
+правилното handling на грешки
+🚀 Ако искаш
+
+Мога да ти:
+
+сглобя цял работещ проект (3 сървъра)
+направя пълна структура на файловете
+или да ти помогна да го направите step-by-step като на упражнение
+
+Кажи 👍
+
+Добре — имаш frontend (React + Vite) и backend (Express), което е точно правилната архитектура 👍
+Сега липсва най-важното: да ги свържеш.
+
+Ще ти покажа как да вържеш React с твоите GET/POST API-та, за да почне да работи реално.
+
+🔗 Какво вече имаш (важно!)
+
+От vite.config.js:
+
+server: {
+  proxy: {
+    '/api': 'http://localhost:5000',
+  },
+},
+
+👉 Това означава:
+
+когато в React извикаш /api/...
+автоматично отива към http://localhost:5000/api/...
+
+✔️ НЕ пишеш localhost:5000 във frontend-а
+✔️ пишеш само /api/...
+
+🟢 1. Вземане на транзакции (GET)
+👉 Добави това в App.jsx
+import { useState, useEffect } from 'react';
+
+function App() {
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/posts') // или /bankAPI/transactions/...
+      .then(res => res.json())
+      .then(data => setTransactions(data))
+      .catch(err => console.error(err));
+  }, []);
+
+  return (
+    <div>
+      <h1>Transactions</h1>
+
+      {transactions.map(t => (
+        <div key={t.id}>
+          <p>{t.title}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default App;
+🟢 2. Създаване на транзакция (POST)
+
+Добави форма:
+
+import { useState } from 'react';
+
+function App() {
+  const [title, setTitle] = useState('');
+
+  const createPost = async () => {
+    const res = await fetch('/api/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
+
+    const data = await res.json();
+    console.log(data);
+  };
+
+  return (
+    <div>
+      <h1>Create Post</h1>
+
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+
+      <button onClick={createPost}>
+        Add
+      </button>
+    </div>
+  );
+}
+🔥 Как да го адаптираш за ТВОЯ проект (банки)
+GET транзакции:
+fetch('/bankAPI/transactions/2024?iban=BG123...')
+POST транзакция:
+fetch('/bankAPI/transactions', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    IBAN_sender: 'BRB123...',
+    IBAN_receiver: 'AAA456...',
+    amount: 100,
+    currency: 'EUR',
+    reason: 'Test transfer'
+  }),
+});
+⚠️ Много важно (често срещани грешки)
+❌ 1. Грешен URL
+
+❌ http://localhost:5000/api/...
+✔️ /api/...
+
+❌ 2. Backend не работи
+
+👉 стартирай:
+
+npm start
+❌ 3. React не вижда backend
+
+👉 стартирай:
+
+npm run dev
+❌ 4. CORS (ако махнеш proxy)
+
+Ако НЕ ползваш proxy:
+
+import cors from 'cors';
+app.use(cors());
+🧠 Какво ти липсва още (за проекта)
+
+За да си завършиш упражнението:
+
+✅ Backend:
+ GET transactions ✔️ почти готово
+ POST transaction (междубанков) ❗
+ Bank register API ❗
+✅ Frontend:
+ форма за превод
+ списък с транзакции
+ показване на грешки (601, 701 и т.н.)
+🚀 Как да изглежда финалният UI
+
+Много просто:
+
+поле: IBAN sender
+поле: IBAN receiver
+поле: сума
+бутон: "Изпрати"
+таблица с транзакции
+🟢 Заключение
+
+👉 Ти си на 70% готов
+👉 Остава:
+
+да вържеш fetch заявките
+да довършиш POST логиката (най-важното)
