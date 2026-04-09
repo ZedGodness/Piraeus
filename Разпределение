@@ -2,9 +2,94 @@
 
 
 Преслав - 
+Роля: UI/UX Specialist
+Цел: Да превърне приложението в модерен банков портал в стил Alpha/Piraeus Bank.
+
+    Съобщение за Commit: style: polish banking GUI with modern Alpha/Piraeus theme
+
+    Файлове за качване:
+
+        App.css: Пълният модерен дизайн със Sidebar, златисти акценти и картови елементи.
+
+        App.jsx (финални корекции): Добавяне на класовете за дизайн (dashboard-layout, bank-card) и икони за по-добро изживяване.
+
+/* App.css - Акцент за Човек 4 */
+.sidebar { background-color: #0A1E3F; } /* Alpha Bank Blue */
+.btn-primary { background-color: #FDB913; } /* Piraeus Gold */
 
 Константин - 
+Роля: Frontend Developer
+
+Цел: Да създаде работещия потребителски интерфейс и да го свърже с бекенда.
+
+    Съобщение за Commit: feat: create functional react forms for transfers and search
+
+    Файлове за качване:
+
+        package.json: Описание на зависимостите.
+
+        vite.config.js: Настройки на проксито за порта на бекенда (5000).
+
+        App.jsx (функционална версия): Логиката за handleTransfer и handleSearch с fetch заявки.
+
+// App.jsx - Функционално ядро 
+const handleTransfer = async (e) => {
+  // POST заявка към /bankAPI/transactions/ 
+};
+const handleSearch = async (e) => {
+  // GET заявка към /bankAPI/transactions/ 
+};
 
 Гюнай - 
+Бекенд инфраструктура и База данни
+
+Роля: Backend Engineer
+
+Цел: Да постави основите на сървъра и структурата на данните.
+
+    Съобщение за Commit: feat: setup express server and database schema
+
+    Файлове за качване:
+
+        piraeus.sql: Пълният SQL скрипт с таблиците users, accounts и payments.
+
+        newDatabaseConnection.js: Логиката за свързване с MySQL чрез Pool.
+
+        server.js (базова версия): Инициализация на Express и базовия GET маршрут за транзакции
+// server.js 
+import express from 'express';
+import dbPool from './newDatabaseConnection.js'; 
+const app = express();
+app.use(express.json());
+
+app.get('/bankAPI/transactions/:search', async (req, res) => {
+  const search = req.params.search;
+  try {
+    const query = `SELECT * FROM payments WHERE dateTime LIKE ? OR IBAN_sender = ? OR IBAN_receiver = ?`;
+    const [results] = await dbPool.query(query, [`%${search}%`, search, search]);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ status_code: 600, status_msg: 'Грешка в базата данни' });
+  }
+});
+app.listen(5000);
+
+
 
 Антоан - 
+Интеграция на системна логика и API
+Роля: System Architect
+Цел: Да внедри сложната логика за междубанкови преводи и комуникация с регистъра.
+Съобщение за Commit: feat: implement inter-bank payment logic and registry integration
+
+    Файлове за качване:
+
+        server.js (пълна версия): Добавяне на POST маршрута с логика за проверка на лимити (код 604), наличност (код 601) и пренасочване към външни банки чрез регистъра (кодове 602, 701, 651).
+
+// server.js 
+app.post('/bankAPI/transactions/', async (req, res) => {
+  const { IBAN_sender, IBAN_receiver, amount, currency, reason } = req.body;
+  // Проверка за вътрешен или външен превод (код 605, 701) 
+  // Fetch към http://localhost:4000/bankRegister/bank/ 
+  // Обработка на статуси от банка бенефициент 
+});
